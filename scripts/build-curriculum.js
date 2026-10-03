@@ -10,19 +10,26 @@ const fs = require('fs')
 const path = require('path')
 const { Chess, checkGoal, isExchangeSafe, forkPieceIsSafe, difficultyScore } = require('./gen-lib')
 const { buildPuzzles: buildPolgarMates } = require('./import-polgar')
-const { genLineCapture, genForkLike, genDiscoveredCheck, genRemovingDefender } = require('./generators')
-const { genBoxMate, genSmotheredMate } = require('./generators-mates')
-// genQueenKingMate / genForcedMate (mate-in-2/3 search) are no longer used
-// by this build — mate-in-1/2/3 now come from scripts/import-polgar.js —
-// but remain available in generators-mates.js for future use.
+const { buildTheme: buildLichessTheme } = require('./import-lichess')
+const { genForkLike } = require('./generators')
+// genLineCapture / genDiscoveredCheck / genRemovingDefender are no longer
+// used here (pins/skewers/discovered-attacks/removing-the-defender now
+// use real Lichess-sourced puzzles instead), but remain available in
+// generators.js for future use.
+// Nothing from generators-mates.js is used by this build anymore —
+// mate-in-1/2/3 come from scripts/import-polgar.js, and back-rank-mate /
+// smothered-mate-patterns now come from scripts/import-lichess.js — but
+// every function in that file remains available for future use.
 const {
   genPromotionIn1,
   genForcedPromotion,
   genCastling,
   genDevelopPiece,
   genCenterPawn,
-  genForcedCapture,
 } = require('./generators-special')
+// genForcedCapture (deflection/zwischenzug) is no longer used here — those
+// two stages now use real Lichess-sourced puzzles — but remains available
+// in generators-special.js for future use.
 
 // The 12 original stages (seed puzzles + lesson text), loaded from the
 // current curriculum.js before this script overwrites it.
@@ -86,19 +93,27 @@ function findSeed(id) {
   return stage
 }
 
+// Most tactics stages below now pull real-game puzzles (from actual
+// online games, not composed positions) via scripts/import-lichess.js —
+// see that file's header comment and LEARNING_PATH.md for where the data
+// comes from. The 5 hand-written seeds stay first in each stage as a
+// gentle, extremely-simple intro; the real-game puzzles (which look and
+// feel meaningfully less "basic" — full boards, not 3-piece endings)
+// follow. double-attack has no clean matching Lichess theme tag, so it
+// keeps this app's own procedurally-generated (but equally
+// engine-verified) puzzles.
+
 console.log('Generating pins...')
 const pins = findSeed('pins')
-pins.puzzles = renumber(pins.puzzles.concat(dedupeAgainstGlobal(genLineCapture(20, { requireCheck: false }))))
+pins.puzzles = renumber(pins.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('pin', 25))))
 
 console.log('Generating skewers...')
 const skewers = findSeed('skewers')
-skewers.puzzles = renumber(
-  skewers.puzzles.concat(dedupeAgainstGlobal(genLineCapture(20, { requireCheck: true })))
-)
+skewers.puzzles = renumber(skewers.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('skewer', 25))))
 
 console.log('Generating forks...')
 const forks = findSeed('forks')
-forks.puzzles = renumber(forks.puzzles.concat(dedupeAgainstGlobal(genForkLike(20, ['n']))))
+forks.puzzles = renumber(forks.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('fork', 25))))
 
 console.log('Generating double-attack...')
 const doubleAttack = findSeed('double-attack')
@@ -108,12 +123,14 @@ doubleAttack.puzzles = renumber(
 
 console.log('Generating discovered-attacks...')
 const discovered = findSeed('discovered-attacks')
-discovered.puzzles = renumber(discovered.puzzles.concat(dedupeAgainstGlobal(genDiscoveredCheck(20))))
+discovered.puzzles = renumber(
+  discovered.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('discoveredAttack', 25)))
+)
 
 console.log('Generating removing-the-defender...')
 const removingDefender = findSeed('removing-the-defender')
 removingDefender.puzzles = renumber(
-  removingDefender.puzzles.concat(dedupeAgainstGlobal(genRemovingDefender(20)))
+  removingDefender.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('capturingDefender', 25)))
 )
 
 console.log('Importing Polgar-book mate-in-1/2/3 puzzles...')
@@ -127,11 +144,15 @@ mateIn3.puzzles = renumber(dedupeAgainstGlobal(polgar['Mate in Three']))
 
 console.log('Generating back-rank-mate...')
 const backRank = findSeed('back-rank-mate')
-backRank.puzzles = renumber(backRank.puzzles.concat(dedupeAgainstGlobal(genBoxMate(20, { ranks: [0, 7] }))))
+backRank.puzzles = renumber(
+  backRank.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('backRankMate', 20)))
+)
 
 console.log('Generating smothered-mate-patterns...')
 const smothered = findSeed('smothered-mate-patterns')
-smothered.puzzles = renumber(smothered.puzzles.concat(dedupeAgainstGlobal(genSmotheredMate(22))))
+smothered.puzzles = renumber(
+  smothered.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('smotheredMate', 20)))
+)
 
 console.log('Generating Opening Principles (new stage)...')
 const openingPrinciples = {
@@ -158,7 +179,11 @@ const kingPawnEndgames = {
   lesson:
     "In the endgame, even a single pawn can win the whole game — if you can walk it safely to the last row and turn it into a queen! Watch for when the path is clear, and remember your king can help clear the way or block the enemy king from catching up.",
   puzzles: renumber(
-    dedupeAgainstGlobal(genPromotionIn1(16)).concat(dedupeAgainstGlobal(genForcedPromotion(9, 2)))
+    dedupeAgainstGlobal(genPromotionIn1(10)).concat(
+      dedupeAgainstGlobal(genForcedPromotion(5, 2)),
+      dedupeAgainstGlobal(buildLichessTheme('promotion', 10)),
+      dedupeAgainstGlobal(buildLichessTheme('pawnEndgame', 10))
+    )
   ),
 }
 
@@ -170,15 +195,7 @@ const deflection = {
   goal: 'capture',
   lesson:
     "Sometimes you can't win material right away — a piece is in the way, or nothing is hanging yet. A deflection or decoy FORCES an enemy piece (often the king, with a check) to move somewhere worse first. Once it's forced to move, your real plan works a move later!",
-  puzzles: renumber(
-    dedupeAgainstGlobal(
-      genForcedCapture(25, {
-        hint: "Don't grab material right away — force Black's hand first, THEN collect.",
-        explanation:
-          "Your first move forces Black into a specific reply, and that's exactly what opens the door to winning material with your second move.",
-      })
-    )
-  ),
+  puzzles: renumber(dedupeAgainstGlobal(buildLichessTheme('deflection', 25))),
 }
 
 console.log('Generating Zwischenzug (new stage)...')
@@ -189,15 +206,7 @@ const zwischenzug = {
   goal: 'capture',
   lesson:
     "Zwischenzug is a German word for \"in-between move.\" Instead of immediately doing the expected thing (like recapturing), you sneak in a surprising check or threat FIRST. Your opponent has to deal with that threat before anything else — and by the time they do, you've won even more.",
-  puzzles: renumber(
-    dedupeAgainstGlobal(
-      genForcedCapture(25, {
-        hint: 'Before you do the obvious thing, look for a surprising in-between move — a check your opponent must answer first.',
-        explanation:
-          "Instead of playing the expected move right away, this in-between move forces Black to react — and only then do you cash in.",
-      })
-    )
-  ),
+  puzzles: renumber(dedupeAgainstGlobal(buildLichessTheme('intermezzo', 25))),
 }
 
 // ---- Mixed review: sample across every other stage for a final test ----

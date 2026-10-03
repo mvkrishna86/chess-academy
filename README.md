@@ -32,7 +32,7 @@ The app works fully offline with zero setup — progress saves to `localStorage`
 
 ## What's inside
 
-16 stages, 722 puzzles total. **See [LEARNING_PATH.md](LEARNING_PATH.md) for a suggested order to work through them, a tip for each stage, and where the puzzle content actually comes from.**
+16 stages, 745 puzzles total. **See [LEARNING_PATH.md](LEARNING_PATH.md) for a suggested order to work through them, a tip for each stage, and where the puzzle content actually comes from.**
 
 1. Checkmate in 1
 2. Opening Principles (castling, developing pieces, controlling the center)
@@ -53,7 +53,7 @@ The app works fully offline with zero setup — progress saves to `localStorage`
 
 This still isn't "the whole of chess" — there's no positional play, no deeper endgames (rook endgames, more complex pawn structures), and no real opening theory. It's a solid tactics-and-fundamentals foundation to build on.
 
-Your son always plays White. Click a piece to see its legal moves (dots), click a highlighted square to move. Progress is saved in the browser (localStorage) per puzzle, so it remembers what's solved even after closing the tab. "Reset progress" in the header clears it.
+Your son always plays White. Click a piece to see its legal moves (dots), click a highlighted square to move. Progress is saved in the browser (localStorage) per puzzle, so it remembers what's solved even after closing the tab. "Reset progress" in the header clears it. The app also remembers which stage/puzzle you were last looking at and reopens there instead of always restarting at puzzle 1 — and the "Jump to #" box above the board lets you skip straight to any puzzle number in the current stage.
 
 Each stage has a **🖨️ Print this stage** button that builds a printable worksheet — diagrams of every puzzle in that stage plus an answer key — handy for practicing away from the screen.
 
@@ -70,7 +70,7 @@ Every single puzzle is machine-checked, not hand-verified, by several layers —
 
 `scripts/audit-safety.js` and `scripts/audit-hanging.js` still exist standalone too, for a from-scratch second opinion, but `validate-curriculum.js` alone is now sufficient.
 
-Most of the 722 puzzles aren't hand-written. The Checkmate in 1 / Mate in 2 / Mate in 3 stages (380 puzzles) are sourced from a real, classic puzzle book (see [LEARNING_PATH.md](LEARNING_PATH.md) for the full story and why several other candidate data sources were rejected). Every other stage's puzzles are produced by generator scripts that place pieces according to a tactical pattern (e.g. "attacker — pinned piece — king, all in a line") and let the engine search confirm a solution exists, which is far more reliable at this scale than writing FENs by hand. Even so, every generator applies the same safety checks above *during generation*, not just after — a generator that doesn't is how the discovered-check bug happened.
+Most of the 745 puzzles aren't hand-written or made up. 380 (the mate stages) are sourced from a classic puzzle book, and another ~240 (pins, forks, skewers, discovered attacks, removing the defender, deflection, zwischenzug, back rank mate, smothered mate, king & pawn endgames) are real positions from real online games, pulled from the official Lichess puzzle database — see [LEARNING_PATH.md](LEARNING_PATH.md) for exactly where each stage's puzzles come from and why several other candidate data sources were rejected. The remaining stages (double attack, opening principles) are produced by this app's own generator scripts, which place pieces according to a tactical pattern (e.g. "attacker — pinned piece — king, all in a line") and let the engine search confirm a solution exists — far more reliable at this scale than writing FENs by hand. Either way, every puzzle — generated or imported — passes the exact same validation, and every generator/importer applies the same safety checks *during* construction, not just after — a check that didn't is how the discovered-check bug happened.
 
 Puzzles within each stage are also sorted easy → hard using a lightweight difficulty heuristic (`difficultyScore` in `scripts/gen-lib.js`) — see LEARNING_PATH.md for what that's based on and why it's deliberately simple rather than a trained model.
 
@@ -80,7 +80,7 @@ Puzzles within each stage are also sorted easy → hard using a lightweight diff
 index.html                   # app shell
 css/style.css                 # all styling, incl. print worksheet styles
 js/vendor/chess.js            # vendored chess.js (rules engine, MIT licensed)
-js/curriculum.js              # the 16 stages / 722 puzzles (data only, generated — see below)
+js/curriculum.js              # the 16 stages / 745 puzzles (data only, generated — see below)
 js/board.js                   # chessboard rendering + click-to-move
 js/app.js                     # app logic: navigation, puzzle flow, progress
 js/print.js                   # builds the printable worksheet
@@ -95,8 +95,10 @@ scripts/gen-lib.js              # shared helpers: board building, exchange evalu
 scripts/forced-search.js        # generic "find a forced N-move line achieving goal X" search
 scripts/generators.js           # pins/skewers, forks/double-attack, discovered checks, removing-the-defender
 scripts/generators-mates.js     # box mates, queen+king mates, smothered mates, mate-in-2/3
-scripts/generators-special.js   # promotion, opening principles, deflection/zwischenzug
-scripts/build-curriculum.js     # runs all generators and writes js/curriculum.js
+scripts/generators-special.js   # promotion, opening principles
+scripts/import-polgar.js        # imports the Polgar-book mate puzzles (scripts/data/polgar-problems.json)
+scripts/import-lichess.js       # imports real-game puzzles (scripts/data/lichess-raw-pool.json) — see LEARNING_PATH.md
+scripts/build-curriculum.js     # runs all generators/importers and writes js/curriculum.js
 scripts/find-mate.js, sweep-mate2.js, sweep-mate3.js   # earlier one-off mate-search tools
 ```
 

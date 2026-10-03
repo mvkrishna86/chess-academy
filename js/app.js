@@ -1,5 +1,6 @@
 ;(function () {
   const PROGRESS_KEY = 'chessAcademyProgress'
+  const LAST_POSITION_KEY = 'chessAcademyLastPosition'
 
   const state = {
     stageIndex: 0,
@@ -212,6 +213,8 @@
   const prevBtn = document.getElementById('prevBtn')
   const nextBtn = document.getElementById('nextBtn')
   const printStageBtn = document.getElementById('printStageBtn')
+  const jumpInput = document.getElementById('jumpInput')
+  const jumpBtn = document.getElementById('jumpBtn')
   const resetProgressBtn = document.getElementById('resetProgressBtn')
   const overallProgressEl = document.getElementById('overallProgress')
   const signInBtn = document.getElementById('signInBtn')
@@ -296,6 +299,46 @@
     turnHintEl.textContent = "Your move — you're playing White!"
     nextBtn.disabled = !hasNextPuzzle()
     prevBtn.disabled = !hasPrevPuzzle()
+    if (jumpInput) jumpInput.value = state.puzzleIndex + 1
+    saveLastPosition()
+  }
+
+  // ---------- remember where you were, across reloads ----------
+  function saveLastPosition() {
+    try {
+      localStorage.setItem(
+        LAST_POSITION_KEY,
+        JSON.stringify({ stageIndex: state.stageIndex, puzzleIndex: state.puzzleIndex })
+      )
+    } catch (e) {
+      // localStorage unavailable (private browsing, etc.) — fine to skip
+    }
+  }
+  function loadLastPosition() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LAST_POSITION_KEY))
+      if (
+        raw &&
+        Number.isInteger(raw.stageIndex) &&
+        Number.isInteger(raw.puzzleIndex) &&
+        raw.stageIndex >= 0 &&
+        raw.stageIndex < STAGES.length &&
+        raw.puzzleIndex >= 0 &&
+        raw.puzzleIndex < STAGES[raw.stageIndex].puzzles.length
+      ) {
+        return raw
+      }
+    } catch (e) {
+      // ignore malformed/missing data
+    }
+    return null
+  }
+
+  function jumpToPuzzle(oneBasedNumber) {
+    const stage = currentStage()
+    const n = Math.min(Math.max(1, Math.floor(oneBasedNumber) || 1), stage.puzzles.length)
+    state.puzzleIndex = n - 1
+    loadPuzzle()
   }
 
   function hasNextPuzzle() {
@@ -490,7 +533,21 @@
     signInBtn.title = 'Fill in js/supabase-config.js to enable account sync (see README).'
   }
 
+  jumpBtn.addEventListener('click', () => jumpToPuzzle(Number(jumpInput.value)))
+  jumpInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') jumpToPuzzle(Number(jumpInput.value))
+  })
+
   // ---------- boot ----------
+  // Resume where you left off last time, instead of always restarting at
+  // stage 1 puzzle 1 — the puzzle counts/stage order can also change
+  // between app updates, so loadLastPosition() validates the saved
+  // indices are still in range before trusting them.
+  const lastPosition = loadLastPosition()
+  if (lastPosition) {
+    state.stageIndex = lastPosition.stageIndex
+    state.puzzleIndex = lastPosition.puzzleIndex
+  }
   renderSidebar()
   loadPuzzle()
 })()

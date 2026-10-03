@@ -189,6 +189,23 @@ body {
   font-weight: 600;
 }
 
+.jump-to-puzzle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--accent-dark);
+}
+
+.jump-to-puzzle input {
+  width: 4rem;
+  padding: 0.3rem 0.4rem;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
 .board-and-controls {
   display: flex;
   gap: 1.5rem;

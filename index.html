@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chess Academy</title>
+<link rel="stylesheet" href="css/style.css?v=3" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>♟️ Chess Academy</h1>
+      <div class="header-actions">
+        <span id="overallProgress" class="overall-progress"></span>
+        <button id="resetProgressBtn" class="link-btn" title="Clear all saved progress">Reset progress</button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <nav class="sidebar" id="sidebar" aria-label="Lesson stages"></nav>
+
+      <main class="main-panel">
+        <section class="lesson-box">
+          <h2 id="stageTitle"></h2>
+          <p id="stageLesson"></p>
+        </section>
+
+        <section class="puzzle-area">
+          <div class="puzzle-header">
+            <span id="puzzleCounter"></span>
+            <button id="printStageBtn" class="secondary-btn">🖨️ Print this stage</button>
+          </div>
+
+          <div class="board-and-controls">
+            <div id="boardContainer" class="board-container"></div>
+
+            <div class="controls">
+              <p id="turnHint" class="turn-hint">Your move — you're playing White!</p>
+              <div id="message" class="message" role="status" aria-live="polite"></div>
+
+              <div class="button-row">
+                <button id="hintBtn" class="secondary-btn">💡 Hint</button>
+                <button id="solutionBtn" class="secondary-btn">👀 Show Answer</button>
+                <button id="retryBtn" class="secondary-btn">↩️ Reset Puzzle</button>
+              </div>
+              <div class="button-row">
+                <button id="prevBtn" class="secondary-btn">⬅ Previous</button>
+                <button id="nextBtn" class="primary-btn" disabled>Next Puzzle ➡</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Printable worksheet, hidden on screen, shown only via @media print -->
+  <div id="printSheet" class="print-sheet"></div>
+
+  <script src="js/vendor/chess.js?v=3"></script>
+  <script src="js/curriculum.js?v=3"></script>
+  <script src="js/board.js?v=3"></script>
+  <script src="js/print.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
+</body>
+</html>

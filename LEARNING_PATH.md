@@ -6,9 +6,9 @@ This is a suggested order for working through the 16 stages, plus a tip for each
 
 ## Where real puzzle data comes from
 
-**Checkmate in 1 / Mate in 2 / Mate in 3** (380 puzzles): **László Polgár's "Chess: 5,334 Problems, Combinations, and Games"** (1994) — a legendary, famously progressive puzzle book used by generations of chess students (yes, including the Polgár sisters themselves). The data comes from [denialromeo/4462-chess-problems](https://github.com/denialromeo/4462-chess-problems), whose solutions were originally computed with Stockfish — and every single one was independently re-verified against this app's own chess engine before being included (see `scripts/import-polgar.js`).
+**Checkmate in 1 / Mate in 2 / Mate in 3** (800 puzzles): **László Polgár's "Chess: 5,334 Problems, Combinations, and Games"** (1994) — a legendary, famously progressive puzzle book used by generations of chess students (yes, including the Polgár sisters themselves). The data comes from [denialromeo/4462-chess-problems](https://github.com/denialromeo/4462-chess-problems), whose solutions were originally computed with Stockfish — and every single one was independently re-verified against this app's own chess engine before being included (see `scripts/import-polgar.js`).
 
-**Pins, Forks, Skewers, Discovered Attacks, Removing the Defender, Deflection & Decoys, Zwischenzug, Back Rank Mate, Smothered Mate & Patterns, and most of King & Pawn Endgames** (around 240 puzzles): real positions from real online games, pulled from the **official Lichess puzzle database** (CC0 / public domain — no permission or attribution even required, though we're giving it anyway because it's accurate and it's the right thing to do). `database.lichess.org` itself is blocked by at least one relevant network's security policy, but the Lichess organization also publishes the exact same dataset on Hugging Face (`huggingface.co/datasets/Lichess/chess-puzzles`), which isn't blocked — see `scripts/import-lichess.js` for exactly how each puzzle is converted and re-verified (every puzzle still has to pass the same mechanical goal + exchange-safety checks as everything else before it's allowed in).
+**Pins, Forks, Skewers, Discovered Attacks, Removing the Defender, Deflection & Decoys, Zwischenzug, Back Rank Mate, Smothered Mate & Patterns, and most of King & Pawn Endgames** (around 670 puzzles): real positions from real online games, pulled from the **official Lichess puzzle database** (CC0 / public domain — no permission or attribution even required, though we're giving it anyway because it's accurate and it's the right thing to do). `database.lichess.org` itself is blocked by at least one relevant network's security policy, but the Lichess organization also publishes the exact same dataset on Hugging Face (`huggingface.co/datasets/Lichess/chess-puzzles`), which isn't blocked — see `scripts/import-lichess.js` for exactly how each puzzle is converted and re-verified (every puzzle still has to pass the same mechanical goal + exchange-safety checks as everything else before it's allowed in).
 
 **Double Attack and the rest of Opening Principles / King & Pawn Endgames**: built by this app's own generators (`scripts/generators*.js`) — a tactical theme ("double attack") with no exact matching Lichess tag, and goals (castle, develop a piece, push a center pawn) that are about following good habits rather than a tagged tactic, so there's no "real game" dataset that fits cleanly. Each generator constructs a position matching the pattern and lets the chess engine confirm a real solution exists — see `README.md`'s "How the puzzles are verified" section for exactly what gets checked.
 
@@ -57,7 +57,13 @@ con = duckdb.connect()
 themes = ['pin','fork','skewer','discoveredAttack','capturingDefender','deflection','intermezzo','backRankMate','smotheredMate','pawnEndgame','promotion']
 out = {}
 for t in themes:
-    rows = con.execute(f\"SELECT PuzzleId, FEN, Moves, Rating FROM read_parquet('/tmp/lichess.parquet') WHERE list_contains(Themes, '{t}') AND FEN LIKE '% b %' AND Rating BETWEEN 500 AND 1500 AND Popularity > 50 ORDER BY Rating ASC LIMIT 400\").fetchall()
+    rows = []
+    for lo, hi in [(500, 800), (800, 1100), (1100, 1500), (1500, 1900)]:
+        # Stratified by rating band for a genuine easy->hard spread, not
+        # just a cluster of similarly-rated puzzles. NbPlays DESC + a
+        # Popularity/NbPlays/theme-count bar favors well-regarded, focused
+        # examples of the theme over obscure or kitchen-sink-tagged ones.
+        rows += con.execute(f\"SELECT PuzzleId, FEN, Moves, Rating FROM read_parquet('/tmp/lichess.parquet') WHERE list_contains(Themes, '{t}') AND FEN LIKE '% b %' AND Rating BETWEEN {lo} AND {hi} AND Popularity > 70 AND NbPlays > 500 AND len(Themes) <= 6 ORDER BY NbPlays DESC LIMIT 150\").fetchall()
     out[t] = [{'id': r[0], 'fen': r[1], 'moves': r[2], 'rating': r[3]} for r in rows]
 json.dump(out, open('scripts/data/lichess-raw-pool.json', 'w'))
 "

@@ -32,7 +32,7 @@ The app works fully offline with zero setup — progress saves to `localStorage`
 
 ## What's inside
 
-16 stages, 745 puzzles total. **See [LEARNING_PATH.md](LEARNING_PATH.md) for a suggested order to work through them, a tip for each stage, and where the puzzle content actually comes from.**
+16 stages, 1,587 puzzles total. **See [LEARNING_PATH.md](LEARNING_PATH.md) for a suggested order to work through them, a tip for each stage, and where the puzzle content actually comes from.**
 
 1. Checkmate in 1
 2. Opening Principles (castling, developing pieces, controlling the center)
@@ -70,7 +70,7 @@ Every single puzzle is machine-checked, not hand-verified, by several layers —
 
 `scripts/audit-safety.js` and `scripts/audit-hanging.js` still exist standalone too, for a from-scratch second opinion, but `validate-curriculum.js` alone is now sufficient.
 
-Most of the 745 puzzles aren't hand-written or made up. 380 (the mate stages) are sourced from a classic puzzle book, and another ~240 (pins, forks, skewers, discovered attacks, removing the defender, deflection, zwischenzug, back rank mate, smothered mate, king & pawn endgames) are real positions from real online games, pulled from the official Lichess puzzle database — see [LEARNING_PATH.md](LEARNING_PATH.md) for exactly where each stage's puzzles come from and why several other candidate data sources were rejected. The remaining stages (double attack, opening principles) are produced by this app's own generator scripts, which place pieces according to a tactical pattern (e.g. "attacker — pinned piece — king, all in a line") and let the engine search confirm a solution exists — far more reliable at this scale than writing FENs by hand. Either way, every puzzle — generated or imported — passes the exact same validation, and every generator/importer applies the same safety checks *during* construction, not just after — a check that didn't is how the discovered-check bug happened.
+Most of the 1,587 puzzles aren't hand-written or made up. 800 (the mate stages) are sourced from a classic puzzle book, and another ~670 (pins, forks, skewers, discovered attacks, removing the defender, deflection, zwischenzug, back rank mate, smothered mate, king & pawn endgames) are real positions from real online games, pulled from the official Lichess puzzle database — see [LEARNING_PATH.md](LEARNING_PATH.md) for exactly where each stage's puzzles come from and why several other candidate data sources were rejected. The remaining stages (double attack, opening principles) are produced by this app's own generator scripts, which place pieces according to a tactical pattern (e.g. "attacker — pinned piece — king, all in a line") and let the engine search confirm a solution exists — far more reliable at this scale than writing FENs by hand. Either way, every puzzle — generated or imported — passes the exact same validation, and every generator/importer applies the same safety checks *during* construction, not just after — a check that didn't is how the discovered-check bug happened.
 
 Puzzles within each stage are also sorted easy → hard using a lightweight difficulty heuristic (`difficultyScore` in `scripts/gen-lib.js`) — see LEARNING_PATH.md for what that's based on and why it's deliberately simple rather than a trained model.
 
@@ -80,7 +80,7 @@ Puzzles within each stage are also sorted easy → hard using a lightweight diff
 index.html                   # app shell
 css/style.css                 # all styling, incl. print worksheet styles
 js/vendor/chess.js            # vendored chess.js (rules engine, MIT licensed)
-js/curriculum.js              # the 16 stages / 745 puzzles (data only, generated — see below)
+js/curriculum.js              # the 16 stages / 1,587 puzzles (data only, generated — see below)
 js/board.js                   # chessboard rendering + click-to-move
 js/app.js                     # app logic: navigation, puzzle flow, progress
 js/print.js                   # builds the printable worksheet

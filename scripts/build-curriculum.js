@@ -20,13 +20,10 @@ const { genForkLike } = require('./generators')
 // mate-in-1/2/3 come from scripts/import-polgar.js, and back-rank-mate /
 // smothered-mate-patterns now come from scripts/import-lichess.js — but
 // every function in that file remains available for future use.
-const {
-  genPromotionIn1,
-  genForcedPromotion,
-  genCastling,
-  genDevelopPiece,
-  genCenterPawn,
-} = require('./generators-special')
+const { genCastling, genDevelopPiece, genCenterPawn } = require('./generators-special')
+// genPromotionIn1 / genForcedPromotion (bare K+P-vs-K puzzles) are no
+// longer used — King & Pawn Endgames now uses only real-game puzzles —
+// but remain available in generators-special.js for future use.
 // genForcedCapture (deflection/zwischenzug) is no longer used here — those
 // two stages now use real Lichess-sourced puzzles — but remains available
 // in generators-special.js for future use.
@@ -51,7 +48,13 @@ const SEED_COUNTS = {
   'discovered-attacks': 5,
   'removing-the-defender': 5,
   'double-attack': 5,
-  'back-rank-mate': 5,
+  // Only 2 (not 5): these hand-made seeds all share the identical bare
+  // "K+R vs k+pawns" skeleton, and since the difficulty sort puts the
+  // fewest-piece positions first, having 5 of them clustered at the very
+  // start made the whole stage look repetitive before any of the varied
+  // real-game puzzles appeared. Same reasoning for the promotion seeds
+  // in King & Pawn Endgames below.
+  'back-rank-mate': 2,
   'smothered-mate-patterns': 3,
   'mate-in-2': 0,
   'mate-in-3': 0,
@@ -105,32 +108,32 @@ function findSeed(id) {
 
 console.log('Generating pins...')
 const pins = findSeed('pins')
-pins.puzzles = renumber(pins.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('pin', 25))))
+pins.puzzles = renumber(pins.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('pin', 60))))
 
 console.log('Generating skewers...')
 const skewers = findSeed('skewers')
-skewers.puzzles = renumber(skewers.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('skewer', 25))))
+skewers.puzzles = renumber(skewers.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('skewer', 60))))
 
 console.log('Generating forks...')
 const forks = findSeed('forks')
-forks.puzzles = renumber(forks.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('fork', 25))))
+forks.puzzles = renumber(forks.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('fork', 60))))
 
 console.log('Generating double-attack...')
 const doubleAttack = findSeed('double-attack')
 doubleAttack.puzzles = renumber(
-  doubleAttack.puzzles.concat(dedupeAgainstGlobal(genForkLike(20, ['q', 'r', 'b'])))
+  doubleAttack.puzzles.concat(dedupeAgainstGlobal(genForkLike(50, ['q', 'r', 'b'])))
 )
 
 console.log('Generating discovered-attacks...')
 const discovered = findSeed('discovered-attacks')
 discovered.puzzles = renumber(
-  discovered.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('discoveredAttack', 25)))
+  discovered.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('discoveredAttack', 60)))
 )
 
 console.log('Generating removing-the-defender...')
 const removingDefender = findSeed('removing-the-defender')
 removingDefender.puzzles = renumber(
-  removingDefender.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('capturingDefender', 25)))
+  removingDefender.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('capturingDefender', 60)))
 )
 
 console.log('Importing Polgar-book mate-in-1/2/3 puzzles...')
@@ -145,13 +148,13 @@ mateIn3.puzzles = renumber(dedupeAgainstGlobal(polgar['Mate in Three']))
 console.log('Generating back-rank-mate...')
 const backRank = findSeed('back-rank-mate')
 backRank.puzzles = renumber(
-  backRank.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('backRankMate', 20)))
+  backRank.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('backRankMate', 55)))
 )
 
 console.log('Generating smothered-mate-patterns...')
 const smothered = findSeed('smothered-mate-patterns')
 smothered.puzzles = renumber(
-  smothered.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('smotheredMate', 20)))
+  smothered.puzzles.concat(dedupeAgainstGlobal(buildLichessTheme('smotheredMate', 50)))
 )
 
 console.log('Generating Opening Principles (new stage)...')
@@ -163,9 +166,9 @@ const openingPrinciples = {
   lesson:
     "The opening (the first few moves of a game) goes well if you follow 3 simple rules: get your king safe by castling, bring your knights and bishops out into the game, and fight for the center squares (d4/d5/e4/e5) where pieces have the most power. Follow these and you'll start every game strong!",
   puzzles: renumber(
-    dedupeAgainstGlobal(genCastling(10)).concat(
-      dedupeAgainstGlobal(genDevelopPiece(10)),
-      dedupeAgainstGlobal(genCenterPawn(10))
+    dedupeAgainstGlobal(genCastling(20)).concat(
+      dedupeAgainstGlobal(genDevelopPiece(20)),
+      dedupeAgainstGlobal(genCenterPawn(20))
     )
   ),
 }
@@ -178,11 +181,16 @@ const kingPawnEndgames = {
   goal: 'promote',
   lesson:
     "In the endgame, even a single pawn can win the whole game — if you can walk it safely to the last row and turn it into a queen! Watch for when the path is clear, and remember your king can help clear the way or block the enemy king from catching up.",
+  // No puzzles from this app's own bare K+P-vs-K generators at all here
+  // (genPromotionIn1/genForcedPromotion) — they all look identical (just
+  // 3 pieces), and the real-game promotion/pawnEndgame puzzles below are
+  // strictly more interesting *and* still genuinely verify "push the
+  // pawn home." Note pawn endgames are inherently sparse-looking even in
+  // real games (most other pieces have been traded off by then) — that
+  // part isn't a bug, it's what the category actually looks like.
   puzzles: renumber(
-    dedupeAgainstGlobal(genPromotionIn1(10)).concat(
-      dedupeAgainstGlobal(genForcedPromotion(5, 2)),
-      dedupeAgainstGlobal(buildLichessTheme('promotion', 10)),
-      dedupeAgainstGlobal(buildLichessTheme('pawnEndgame', 10))
+    dedupeAgainstGlobal(buildLichessTheme('promotion', 50)).concat(
+      dedupeAgainstGlobal(buildLichessTheme('pawnEndgame', 50))
     )
   ),
 }
@@ -195,7 +203,7 @@ const deflection = {
   goal: 'capture',
   lesson:
     "Sometimes you can't win material right away — a piece is in the way, or nothing is hanging yet. A deflection or decoy FORCES an enemy piece (often the king, with a check) to move somewhere worse first. Once it's forced to move, your real plan works a move later!",
-  puzzles: renumber(dedupeAgainstGlobal(buildLichessTheme('deflection', 25))),
+  puzzles: renumber(dedupeAgainstGlobal(buildLichessTheme('deflection', 60))),
 }
 
 console.log('Generating Zwischenzug (new stage)...')
@@ -206,7 +214,7 @@ const zwischenzug = {
   goal: 'capture',
   lesson:
     "Zwischenzug is a German word for \"in-between move.\" Instead of immediately doing the expected thing (like recapturing), you sneak in a surprising check or threat FIRST. Your opponent has to deal with that threat before anything else — and by the time they do, you've won even more.",
-  puzzles: renumber(dedupeAgainstGlobal(buildLichessTheme('intermezzo', 25))),
+  puzzles: renumber(dedupeAgainstGlobal(buildLichessTheme('intermezzo', 60))),
 }
 
 // ---- Mixed review: sample across every other stage for a final test ----

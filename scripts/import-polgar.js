@@ -26,12 +26,10 @@ const { Chess } = require('./gen-lib')
 const RAW = require('./data/polgar-problems.json')
 
 const TARGETS = {
-  // The underlying (white-to-move) pool is 307 / 3195 / 420 — these are
-  // generous samples, not the ceiling, chosen to give real depth while
-  // still leaving room to grow further later if desired.
-  'Mate in One': { count: 100, goal: 'mate' },
-  'Mate in Two': { count: 180, goal: 'mate' },
-  'Mate in Three': { count: 100, goal: 'mate' },
+  // The underlying (white-to-move) pool is 307 / 3195 / 420 total.
+  'Mate in One': { count: 200, goal: 'mate' },
+  'Mate in Two': { count: 400, goal: 'mate' },
+  'Mate in Three': { count: 200, goal: 'mate' },
 }
 
 function evenlySpaced(arr, count) {

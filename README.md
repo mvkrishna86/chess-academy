@@ -32,7 +32,7 @@ The app works fully offline with zero setup — progress saves to `localStorage`
 
 ## What's inside
 
-16 stages, 417 puzzles total:
+16 stages, 722 puzzles total. **See [LEARNING_PATH.md](LEARNING_PATH.md) for a suggested order to work through them, a tip for each stage, and where the puzzle content actually comes from.**
 
 1. Checkmate in 1
 2. Opening Principles (castling, developing pieces, controlling the center)
@@ -70,7 +70,9 @@ Every single puzzle is machine-checked, not hand-verified, by several layers —
 
 `scripts/audit-safety.js` and `scripts/audit-hanging.js` still exist standalone too, for a from-scratch second opinion, but `validate-curriculum.js` alone is now sufficient.
 
-Most of the 417 puzzles aren't hand-written — they're produced by generator scripts that place pieces according to a tactical pattern (e.g. "attacker — pinned piece — king, all in a line") and let the engine search confirm a solution exists, which is far more reliable at this scale than writing FENs by hand. Even so, every generator applies the same safety checks above *during generation*, not just after — a generator that doesn't is how the discovered-check bug happened.
+Most of the 722 puzzles aren't hand-written. The Checkmate in 1 / Mate in 2 / Mate in 3 stages (380 puzzles) are sourced from a real, classic puzzle book (see [LEARNING_PATH.md](LEARNING_PATH.md) for the full story and why several other candidate data sources were rejected). Every other stage's puzzles are produced by generator scripts that place pieces according to a tactical pattern (e.g. "attacker — pinned piece — king, all in a line") and let the engine search confirm a solution exists, which is far more reliable at this scale than writing FENs by hand. Even so, every generator applies the same safety checks above *during generation*, not just after — a generator that doesn't is how the discovered-check bug happened.
+
+Puzzles within each stage are also sorted easy → hard using a lightweight difficulty heuristic (`difficultyScore` in `scripts/gen-lib.js`) — see LEARNING_PATH.md for what that's based on and why it's deliberately simple rather than a trained model.
 
 ## Project structure
 
@@ -78,7 +80,7 @@ Most of the 417 puzzles aren't hand-written — they're produced by generator sc
 index.html                   # app shell
 css/style.css                 # all styling, incl. print worksheet styles
 js/vendor/chess.js            # vendored chess.js (rules engine, MIT licensed)
-js/curriculum.js              # the 16 stages / 417 puzzles (data only, generated — see below)
+js/curriculum.js              # the 16 stages / 722 puzzles (data only, generated — see below)
 js/board.js                   # chessboard rendering + click-to-move
 js/app.js                     # app logic: navigation, puzzle flow, progress
 js/print.js                   # builds the printable worksheet

@@ -8,9 +8,13 @@
  */
 const fs = require('fs')
 const path = require('path')
-const { Chess, checkGoal, isExchangeSafe, forkPieceIsSafe } = require('./gen-lib')
+const { Chess, checkGoal, isExchangeSafe, forkPieceIsSafe, difficultyScore } = require('./gen-lib')
+const { buildPuzzles: buildPolgarMates } = require('./import-polgar')
 const { genLineCapture, genForkLike, genDiscoveredCheck, genRemovingDefender } = require('./generators')
-const { genBoxMate, genQueenKingMate, genSmotheredMate, genForcedMate } = require('./generators-mates')
+const { genBoxMate, genSmotheredMate } = require('./generators-mates')
+// genQueenKingMate / genForcedMate (mate-in-2/3 search) are no longer used
+// by this build — mate-in-1/2/3 now come from scripts/import-polgar.js —
+// but remain available in generators-mates.js for future use.
 const {
   genPromotionIn1,
   genForcedPromotion,
@@ -30,7 +34,10 @@ const {
 // would treat the previous run's generated puzzles as "seeds" too and the
 // stages would balloon (this actually happened once; don't remove this).
 const SEED_COUNTS = {
-  'mate-in-1': 5,
+  // mate-in-1/2/3 have 0: they're fully replaced by real, book-sourced
+  // puzzles from scripts/import-polgar.js (see below) rather than any
+  // hand-written or procedurally-generated seed.
+  'mate-in-1': 0,
   pins: 5,
   forks: 5,
   skewers: 5,
@@ -39,8 +46,8 @@ const SEED_COUNTS = {
   'double-attack': 5,
   'back-rank-mate': 5,
   'smothered-mate-patterns': 3,
-  'mate-in-2': 4,
-  'mate-in-3': 2,
+  'mate-in-2': 0,
+  'mate-in-3': 0,
   'mixed-review': 7,
 }
 
@@ -109,14 +116,14 @@ removingDefender.puzzles = renumber(
   removingDefender.puzzles.concat(dedupeAgainstGlobal(genRemovingDefender(20)))
 )
 
-console.log('Generating mate-in-1...')
+console.log('Importing Polgar-book mate-in-1/2/3 puzzles...')
+const polgar = buildPolgarMates()
 const mateIn1 = findSeed('mate-in-1')
-mateIn1.puzzles = renumber(
-  mateIn1.puzzles.concat(
-    dedupeAgainstGlobal(genBoxMate(13, { ranks: [0, 1, 2, 3, 4, 5, 6, 7] })),
-    dedupeAgainstGlobal(genQueenKingMate(12))
-  )
-)
+mateIn1.puzzles = renumber(dedupeAgainstGlobal(polgar['Mate in One']))
+const mateIn2 = findSeed('mate-in-2')
+mateIn2.puzzles = renumber(dedupeAgainstGlobal(polgar['Mate in Two']))
+const mateIn3 = findSeed('mate-in-3')
+mateIn3.puzzles = renumber(dedupeAgainstGlobal(polgar['Mate in Three']))
 
 console.log('Generating back-rank-mate...')
 const backRank = findSeed('back-rank-mate')
@@ -125,14 +132,6 @@ backRank.puzzles = renumber(backRank.puzzles.concat(dedupeAgainstGlobal(genBoxMa
 console.log('Generating smothered-mate-patterns...')
 const smothered = findSeed('smothered-mate-patterns')
 smothered.puzzles = renumber(smothered.puzzles.concat(dedupeAgainstGlobal(genSmotheredMate(22))))
-
-console.log('Generating mate-in-2 (slow-ish)...')
-const mateIn2 = findSeed('mate-in-2')
-mateIn2.puzzles = renumber(mateIn2.puzzles.concat(dedupeAgainstGlobal(genForcedMate(21, 2))))
-
-console.log('Generating mate-in-3 (slow)...')
-const mateIn3 = findSeed('mate-in-3')
-mateIn3.puzzles = renumber(mateIn3.puzzles.concat(dedupeAgainstGlobal(genForcedMate(18, 3))))
 
 console.log('Generating Opening Principles (new stage)...')
 const openingPrinciples = {
@@ -258,6 +257,18 @@ const FINAL_STAGES = [
   kingPawnEndgames,
   mixedReview,
 ]
+
+// ---- Sort each stage easy -> hard ("zero to hero") ----
+// Mixed Review intentionally stays in its original cross-stage-sampled
+// order (it's meant to be unpredictable practice, not a ramp).
+for (const stage of FINAL_STAGES) {
+  if (stage.id === 'mixed-review') continue
+  stage.puzzles
+    .sort((a, b) => difficultyScore(a.fen, a.solution) - difficultyScore(b.fen, b.solution))
+    .forEach((p, i) => {
+      p.id = i + 1
+    })
+}
 
 for (const stage of FINAL_STAGES) {
   console.log(`${stage.id}: ${stage.puzzles.length} puzzles`)

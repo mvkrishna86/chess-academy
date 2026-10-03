@@ -226,6 +226,37 @@ function forkPieceIsSafe(chess, lastMoveResult) {
   return isExchangeSafe(chess, lastMoveResult)
 }
 
+// ---------------------------------------------------------------------
+// Difficulty scoring, for ordering each stage's puzzles easy -> hard
+// ("zero to hero"). This is a deliberately lightweight heuristic, not a
+// machine-learning model — real puzzle-difficulty-rating systems (see
+// e.g. the FedCSIS puzzle-difficulty challenges) fine-tune neural nets
+// like Maia-2 against millions of human solve-attempts, ensembled with
+// Stockfish/Leela engine features, which needs GPU training and isn't
+// feasible for a static client-side app. But that research consistently
+// finds a few CHEAP, HAND-CRAFTED features carry most of the signal:
+// solution length, the number of choices at the critical position, and
+// overall position complexity (piece count). We use exactly those three,
+// computed directly off the FEN + solution with no engine search needed.
+// ---------------------------------------------------------------------
+function difficultyScore(fen, solution) {
+  const chess = new Chess()
+  chess.load(fen)
+  const branchingFactor = chess.moves().length
+  let pieceCount = 0
+  const board = chess.board()
+  for (const row of board) {
+    for (const cell of row) {
+      if (cell) pieceCount++
+    }
+  }
+  const plies = solution.length
+  // Weighted so solution length dominates (it's the single strongest
+  // signal in the literature), with branching factor and position
+  // complexity as secondary tie-breakers.
+  return plies * 100 + branchingFactor * 2 + pieceCount
+}
+
 module.exports = {
   Chess,
   FILES,
@@ -246,6 +277,7 @@ module.exports = {
   isExchangeSafe,
   forkPieceIsSafe,
   exchangeNetGain,
+  difficultyScore,
   PIECE_VALUES,
   ROOK_DIRS,
   BISHOP_DIRS,

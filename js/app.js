@@ -12,30 +12,55 @@
   }
 
   // ---------- progress persistence ----------
-  function loadProgress() {
+  // In-memory cache, synchronously populated from localStorage at boot so
+  // offline/anonymous play is instant and unchanged from before. When
+  // signed in (via js/auth.js's ChessAuth), it's additionally merged with
+  // and kept in sync with Supabase — but every read in this file stays
+  // synchronous against this cache, so no rendering code needed to change.
+  function loadLocalProgress() {
     try {
       return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}
     } catch (e) {
       return {}
     }
   }
-  function saveProgress(progress) {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
+  let progressCache = loadLocalProgress()
+  function persistLocal() {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progressCache))
   }
   function markSolved(stageId, puzzleId) {
-    const progress = loadProgress()
-    if (!progress[stageId]) progress[stageId] = {}
-    progress[stageId][puzzleId] = true
-    saveProgress(progress)
+    if (!progressCache[stageId]) progressCache[stageId] = {}
+    const alreadySynced = !!progressCache[stageId][puzzleId]
+    progressCache[stageId][puzzleId] = true
+    persistLocal()
+    if (!alreadySynced && window.ChessAuth) window.ChessAuth.upsertProgress(stageId, puzzleId)
   }
   function isSolved(stageId, puzzleId) {
-    const progress = loadProgress()
-    return !!(progress[stageId] && progress[stageId][puzzleId])
+    return !!(progressCache[stageId] && progressCache[stageId][puzzleId])
   }
   function stageSolvedCount(stage) {
-    const progress = loadProgress()
-    const done = progress[stage.id] || {}
+    const done = progressCache[stage.id] || {}
     return stage.puzzles.filter((p) => done[p.id]).length
+  }
+  // Merges a {stageId: {puzzleId: true}} map (from Supabase) into the
+  // local cache, and reports back which locally-solved puzzles weren't in
+  // that remote set yet (so the caller can push them up — a one-time
+  // local -> remote merge on first sign-in on a given browser).
+  function mergeRemoteProgress(remote) {
+    const missingRemotely = []
+    for (const stageId in progressCache) {
+      for (const puzzleId in progressCache[stageId]) {
+        if (!(remote[stageId] && remote[stageId][puzzleId])) {
+          missingRemotely.push({ stageId: stageId, puzzleId: Number(puzzleId) })
+        }
+      }
+    }
+    for (const stageId in remote) {
+      if (!progressCache[stageId]) progressCache[stageId] = {}
+      Object.assign(progressCache[stageId], remote[stageId])
+    }
+    persistLocal()
+    return missingRemotely
   }
 
   // ---------- exchange safety (mirrors scripts/gen-lib.js) ----------
@@ -189,6 +214,10 @@
   const printStageBtn = document.getElementById('printStageBtn')
   const resetProgressBtn = document.getElementById('resetProgressBtn')
   const overallProgressEl = document.getElementById('overallProgress')
+  const signInBtn = document.getElementById('signInBtn')
+  const signOutBtn = document.getElementById('signOutBtn')
+  const userInfoEl = document.getElementById('userInfo')
+  const userEmailEl = document.getElementById('userEmail')
 
   // ---------- sidebar ----------
   function renderSidebar() {
@@ -219,8 +248,7 @@
   }
 
   function firstUnsolvedIndex(stage) {
-    const progress = loadProgress()
-    const done = progress[stage.id] || {}
+    const done = progressCache[stage.id] || {}
     const idx = stage.puzzles.findIndex((p) => !done[p.id])
     return idx === -1 ? 0 : idx
   }
@@ -426,11 +454,41 @@
 
   resetProgressBtn.addEventListener('click', () => {
     if (confirm('Clear all saved progress? This cannot be undone.')) {
+      progressCache = {}
       localStorage.removeItem(PROGRESS_KEY)
+      if (window.ChessAuth) window.ChessAuth.deleteAll()
       renderSidebar()
       loadPuzzle()
     }
   })
+
+  // ---------- auth ----------
+  if (signInBtn) signInBtn.addEventListener('click', () => window.ChessAuth.signIn())
+  if (signOutBtn) signOutBtn.addEventListener('click', () => window.ChessAuth.signOut())
+
+  if (window.ChessAuth && window.ChessAuth.isConfigured) {
+    window.ChessAuth.onAuthChange((user) => {
+      if (user) {
+        signInBtn.hidden = true
+        userInfoEl.hidden = false
+        userEmailEl.textContent = user.email || ''
+        window.ChessAuth.fetchProgress().then((remote) => {
+          const toPush = mergeRemoteProgress(remote)
+          if (toPush.length) window.ChessAuth.upsertMany(toPush)
+          renderSidebar()
+          state.solvedThisPuzzle = isSolved(currentStage().id, currentPuzzle().id)
+          if (state.solvedThisPuzzle) nextBtn.disabled = !hasNextPuzzle()
+        })
+      } else {
+        signInBtn.hidden = false
+        userInfoEl.hidden = true
+      }
+    })
+  } else if (signInBtn) {
+    signInBtn.textContent = 'Sign-in not set up yet'
+    signInBtn.disabled = true
+    signInBtn.title = 'Fill in js/supabase-config.js to enable account sync (see README).'
+  }
 
   // ---------- boot ----------
   renderSidebar()

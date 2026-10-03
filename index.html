@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Chess Academy</title>
-<link rel="stylesheet" href="css/style.css?v=3" />
+<link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
   <div class="app">
@@ -12,6 +12,13 @@
       <h1>♟️ Chess Academy</h1>
       <div class="header-actions">
         <span id="overallProgress" class="overall-progress"></span>
+        <span id="authArea" class="auth-area">
+          <button id="signInBtn" class="link-btn">Sign in with Google</button>
+          <span id="userInfo" class="user-info" hidden>
+            <span id="userEmail" class="user-email"></span>
+            <button id="signOutBtn" class="link-btn">Sign out</button>
+          </span>
+        </span>
         <button id="resetProgressBtn" class="link-btn" title="Clear all saved progress">Reset progress</button>
       </div>
     </header>
@@ -57,10 +64,13 @@
   <!-- Printable worksheet, hidden on screen, shown only via @media print -->
   <div id="printSheet" class="print-sheet"></div>
 
-  <script src="js/vendor/chess.js?v=3"></script>
-  <script src="js/curriculum.js?v=3"></script>
-  <script src="js/board.js?v=3"></script>
-  <script src="js/print.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/vendor/chess.js?v=4"></script>
+  <script src="js/curriculum.js?v=4"></script>
+  <script src="js/board.js?v=4"></script>
+  <script src="js/print.js?v=4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase-config.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/app.js?v=5"></script>
 </body>
 </html>

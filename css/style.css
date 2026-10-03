@@ -54,6 +54,32 @@ body {
   font-weight: 600;
 }
 
+.auth-area {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.user-info[hidden] {
+  display: none;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: #cfe8d8;
+}
+
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
 .link-btn {
   background: none;
   border: none;

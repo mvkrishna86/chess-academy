@@ -17,6 +17,19 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000 in your browser.
 
+**Live hosted version:** https://mvkrishna86.github.io/chess-academy/ (GitHub Pages, free, auto-deploys from the `main` branch of https://github.com/mvkrishna86/chess-academy).
+
+## Google login setup (optional)
+
+The app works fully offline with zero setup — progress saves to `localStorage` as before. Signing in with Google (via Supabase) additionally syncs progress across devices/browsers. Until you do the steps below, the header shows a disabled "Sign-in not set up yet" button and nothing else changes.
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Open the SQL Editor in your Supabase project, paste in the contents of `supabase/schema.sql`, and run it (creates the `progress` table + row-level-security policies).
+3. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials): create an OAuth consent screen, then an OAuth Client ID of type "Web application." Set its **Authorized redirect URI** to the callback URL Supabase shows you under Authentication → Providers → Google (looks like `https://<project-ref>.supabase.co/auth/v1/callback`) — **not** your app's URL.
+4. Back in Supabase → Authentication → Providers → Google: paste in the Client ID/Secret from step 3 and enable the provider.
+5. In Supabase → Authentication → URL Configuration: add `https://mvkrishna86.github.io/chess-academy/` (and `http://localhost:8000` if testing locally) to the Redirect URLs allowlist. Skipping this makes login silently fail on the deployed site.
+6. Edit `js/supabase-config.js` and fill in your project's URL and anon/public key (found in Supabase → Project Settings → API). This key is safe to commit — RLS policies protect the data, not key secrecy.
+
 ## What's inside
 
 16 stages, 417 puzzles total:
@@ -69,6 +82,9 @@ js/curriculum.js              # the 16 stages / 417 puzzles (data only, generate
 js/board.js                   # chessboard rendering + click-to-move
 js/app.js                     # app logic: navigation, puzzle flow, progress
 js/print.js                   # builds the printable worksheet
+js/supabase-config.js         # Supabase project URL + anon key (fill in — see "Google login setup")
+js/auth.js                    # Supabase client + auth state; no-ops cleanly if not configured
+supabase/schema.sql           # progress table + RLS policies (run once in Supabase's SQL editor)
 
 scripts/validate-curriculum.js  # verifies every puzzle: legal, achieves goal, exchange-safe, no hanging piece
 scripts/audit-safety.js         # standalone exchange-safety audit (opponent can't win the material back)

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Chess Academy</title>
-<link rel="stylesheet" href="css/style.css?v=10" />
+<link rel="stylesheet" href="css/style.css?v=11" />
 </head>
 <body>
   <div class="app">
@@ -23,7 +23,12 @@
       </div>
     </header>
 
-    <div class="app-body">
+    <nav class="mode-tabs" aria-label="App mode">
+      <button id="puzzlesTabBtn" class="mode-tab active">📚 Puzzles</button>
+      <button id="playTabBtn" class="mode-tab">🤖 Play vs Computer</button>
+    </nav>
+
+    <div class="app-body" id="puzzleMode">
       <nav class="sidebar" id="sidebar" aria-label="Lesson stages"></nav>
 
       <main class="main-panel">
@@ -64,18 +69,60 @@
         </section>
       </main>
     </div>
+
+    <div class="app-body" id="playMode" hidden>
+      <main class="main-panel play-main-panel">
+        <section class="lesson-box">
+          <h2>🤖 Play vs Computer</h2>
+          <p>You're always White. Pick a difficulty and play a full game against the engine — a real way to practice spotting the tactics you've been drilling.</p>
+        </section>
+
+        <section class="puzzle-area">
+          <div class="puzzle-header">
+            <label class="difficulty-picker">
+              Difficulty:
+              <select id="difficultySelect">
+                <option value="0">Beginner</option>
+                <option value="1">Easy</option>
+                <option value="2" selected>Medium</option>
+                <option value="3">Hard</option>
+                <option value="4">Club</option>
+              </select>
+            </label>
+            <button id="newGameBtn" class="primary-btn">New Game</button>
+            <button id="resignBtn" class="secondary-btn">Resign</button>
+          </div>
+
+          <div class="board-and-controls">
+            <div id="playBoardContainer" class="board-container"></div>
+
+            <div class="controls">
+              <p id="playStatus" class="turn-hint">Your move — you're playing White!</p>
+              <div id="playMessage" class="message" role="status" aria-live="polite"></div>
+              <div class="move-list-wrap">
+                <h3>Moves</h3>
+                <ol id="moveList" class="move-list"></ol>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
 
   <!-- Printable worksheet, hidden on screen, shown only via @media print -->
   <div id="printSheet" class="print-sheet"></div>
 
-  <script src="js/vendor/chess.js?v=10"></script>
-  <script src="js/curriculum.js?v=10"></script>
-  <script src="js/board.js?v=10"></script>
-  <script src="js/print.js?v=10"></script>
+  <script src="js/vendor/chess.js?v=11"></script>
+  <script src="js/curriculum.js?v=11"></script>
+  <script src="js/board.js?v=11"></script>
+  <script src="js/print.js?v=11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="js/supabase-config.js?v=10"></script>
-  <script src="js/auth.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/supabase-config.js?v=11"></script>
+  <script src="js/auth.js?v=11"></script>
+  <script src="js/app.js?v=11"></script>
+  <script src="js/engine.js?v=11"></script>
+  <script src="js/play.js?v=11"></script>
+  <script src="js/mode-switch.js?v=11"></script>
 </body>
 </html>

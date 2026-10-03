@@ -57,6 +57,14 @@ Your son always plays White. Click a piece to see its legal moves (dots), click 
 
 Each stage has a **🖨️ Print this stage** button that builds a printable worksheet — diagrams of every puzzle in that stage plus an answer key — handy for practicing away from the screen.
 
+## Play vs Computer
+
+The "🤖 Play vs Computer" tab (next to "📚 Puzzles") is a full game against a real chess engine — [Stockfish](https://stockfishchess.org/), running entirely offline in the browser via WebAssembly, not a server. Five difficulty levels (Beginner → Club), set via Stockfish's own `Skill Level`/`UCI_Elo` options, so the same engine stays a fair opponent as he improves over years instead of hitting a low ceiling the way a hand-rolled bot would.
+
+**Why this specific build:** a newer, multi-threaded Stockfish WASM build was tried first and silently failed in a plain browser `Worker` — it needs `SharedArrayBuffer`, which needs `Cross-Origin-Opener-Policy`/`Cross-Origin-Embedder-Policy` response headers that a static host like GitHub Pages can't set. `js/vendor/stockfish.wasm.js` + `.wasm` (from the `stockfish.js@10.0.2` npm package, Stockfish "2019-08-15 64 POPCNT Multi-Variant") is genuinely single-threaded and was verified working with a plain `new Worker(...)` and zero special headers.
+
+**License:** Stockfish is GPL-3.0 — see `js/vendor/stockfish-COPYING.txt` (vendored alongside the binary) and https://github.com/niklasf/stockfish.js for source.
+
 **Multiple correct moves are handled properly.** Many puzzles (especially mates) have more than one winning move — the app doesn't just check your move against the one line it happened to record. On the final move of a puzzle, any legal move that actually achieves the goal (checkmate, a safe capture, etc.) is accepted. On an earlier move in a multi-move puzzle, if what you played doesn't match the recorded line, the app re-runs the same forced-line search live, right there in the browser, to check whether your move *also* forces the win within the remaining moves — if so, it's accepted and the opponent's forced reply is computed for your move, not just replayed from the recorded line.
 
 ## How the puzzles are verified
@@ -87,6 +95,10 @@ js/print.js                   # builds the printable worksheet
 js/supabase-config.js         # Supabase project URL + anon key (fill in — see "Google login setup")
 js/auth.js                    # Supabase client + auth state; no-ops cleanly if not configured
 supabase/schema.sql           # progress table + RLS policies (run once in Supabase's SQL editor)
+js/engine.js                  # Promise wrapper around the vendored Stockfish Worker (UCI handshake, skill level, best-move)
+js/play.js                    # Play vs Computer mode controller (independent of js/app.js)
+js/mode-switch.js             # toggles between Puzzles and Play vs Computer
+js/vendor/stockfish.wasm.js, stockfish.wasm, stockfish-COPYING.txt   # vendored engine (GPL-3.0) — see "Play vs Computer" above
 
 scripts/validate-curriculum.js  # verifies every puzzle: legal, achieves goal, exchange-safe, no hanging piece
 scripts/audit-safety.js         # standalone exchange-safety audit (opponent can't win the material back)

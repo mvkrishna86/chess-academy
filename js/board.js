@@ -92,6 +92,7 @@
     container.appendChild(el)
 
     let selected = null
+    let locked = false
 
     function refresh() {
       paint(squares, chess.board())
@@ -126,6 +127,12 @@
     }
 
     function onSquareClick(sq) {
+      // Needed for Play vs Computer: without this, a player could select
+      // and move the OPPONENT's pieces during the engine's "thinking"
+      // delay, since the only other guard (piece.color === chess.turn())
+      // happily matches Black once it's Black's turn. Puzzle mode never
+      // locks, so this is a no-op there.
+      if (locked) return
       const piece = chess.get(sq)
 
       if (selected) {
@@ -182,6 +189,13 @@
       deselect: () => {
         clearMarks(squares)
         selected = null
+      },
+      setLocked: (value) => {
+        locked = value
+        if (locked) {
+          clearMarks(squares)
+          selected = null
+        }
       },
     }
   }
